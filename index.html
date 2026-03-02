@@ -106,11 +106,11 @@
             overflow-y: auto;
             border: 1px solid #eee;
         }
-        .staff-item { font-size: 11px; display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+        .staff-item { font-size: 11px; display: flex; align-items: center; gap: 8px; padding: 2px 0; color: black; }
         .staff-item input { width: auto; margin: 0; }
 
         .rating-group { display: flex; background: #f9f9f9; padding: 8px; border-radius: 4px; gap: 10px; border: 1px solid #eee; }
-        .rating-option { display: flex; align-items: center; font-size: 11px; cursor: pointer; }
+        .rating-option { display: flex; align-items: center; font-size: 11px; cursor: pointer; color: black; }
         .rating-option input { width: auto; margin-right: 3px; }
 
         /* PDF Styles */
@@ -119,7 +119,7 @@
         .school-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
         .school-name { font-size: 18px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; }
+        th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; color: black; }
         th { background-color: #f2f2f2; text-align: center; }
 
         /* Photo Grid in PDF (2 cols x 3 rows = 6 max) */
@@ -140,7 +140,7 @@
 <!-- ADMIN MODAL -->
 <div id="admin-modal">
     <div class="modal-content">
-        <h3>Tetapan Admin</h3>
+        <h3 style="color: black;">Tetapan Admin</h3>
         <label>URL Google Drive (Google Apps Script)</label>
         <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/...">
         
@@ -195,7 +195,7 @@
         <label>Kelemahan</label>
         <textarea id="in_kelemahan" oninput="sync()" rows="2"></textarea>
 
-        <label>Muat Naik Gambar (Boleh banyak)</label>
+        <label>Muat Naik Gambar (6 keping setiap halaman PDF)</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
 
         <div class="action-bar">
@@ -309,7 +309,6 @@
 
     function loadSettings() {
         const raw = localStorage.getItem('cs_settings');
-        // Senarai Nama Staf yang dikemas kini berdasarkan permintaan anda
         const def = {
             drive_url: "https://script.google.com/macros/s/AKfycbz6Dzpkvqa-FNYSd7g8DFB7Kz2MuXHGzhGSOwCr2f3NG7T0ai8Om3eEH_twNMwYN_kOZQ/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
@@ -345,7 +344,6 @@
         sync();
     }
 
-    // --- FORM LOGIC ---
     function handleDateChange() {
         const d = document.getElementById('in_tarikh').value;
         if(d) {
@@ -421,10 +419,13 @@
 
         questions.forEach((_, i) => {
             const b = i + 1;
-            const v = document.querySelector(`input[name="q${b}"]:checked`).value;
-            document.getElementById(`pv_${b}_ya`).innerText = (v === 'Ya') ? '/' : '';
-            document.getElementById(`pv_${b}_tidak`).innerText = (v === 'Tidak') ? '/' : '';
-            document.getElementById(`pv_${b}_tb`).innerText = (v === 'TB') ? '/' : '';
+            const radios = document.getElementsByName(`q${b}`);
+            let val = "Ya";
+            for(let r of radios) { if(r.checked) val = r.value; }
+            
+            document.getElementById(`pv_${b}_ya`).innerText = (val === 'Ya') ? '/' : '';
+            document.getElementById(`pv_${b}_tidak`).innerText = (val === 'Tidak') ? '/' : '';
+            document.getElementById(`pv_${b}_tb`).innerText = (val === 'TB') ? '/' : '';
         });
     }
 
@@ -436,7 +437,7 @@
         questions.forEach((q, i) => {
             const n = i + 1;
             f.innerHTML += `
-                <label>${n}. ${q}</label>
+                <label style="color: black;">${n}. ${q}</label>
                 <div class="rating-group">
                     <label class="rating-option"><input type="radio" name="q${n}" value="Ya" checked onchange="sync()"> Ya</label>
                     <label class="rating-option"><input type="radio" name="q${n}" value="Tidak" onchange="sync()"> Tidak</label>
@@ -457,6 +458,7 @@
 
     async function processAll() {
         const btn = document.getElementById('btnJana');
+        const originalText = btn.innerText;
         btn.disabled = true;
         btn.innerText = "Menjana PDF...";
 
@@ -475,31 +477,44 @@
 
             const settings = JSON.parse(localStorage.getItem('cs_settings') || '{}');
             if(settings.drive_url) {
+                btn.innerText = "Memuat naik ke Drive...";
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
                     const base64 = reader.result.split(',')[1];
+                    
                     fetch(settings.drive_url, {
                         method: 'POST',
                         body: JSON.stringify({ file: base64, filename: opt.filename })
                     })
                     .then(res => res.json())
                     .then(data => {
-                        if(data.status === "success") alert("Berjaya upload ke Drive!");
-                        else alert("Gagal hantar ke Drive: " + (data.message || 'Ralat tidak diketahui'));
+                        if(data.status === "success") {
+                            alert("✅ BERJAYA: Laporan telah disimpan ke Google Drive!");
+                        } else {
+                            alert("❌ GAGAL: Drive merespon dengan ralat: " + (data.message || 'Ralat tidak diketahui'));
+                        }
                     })
-                    .catch(e => alert("Ralat sambungan ke Drive. Semak URL Macro anda."));
+                    .catch(e => {
+                        console.error("Fetch Error:", e);
+                        alert("❌ RALAT RANGKAIAN: Tidak dapat menghubungi Google Apps Script.\n\nSila pastikan:\n1. URL Macro dalam Admin adalah betul.\n2. Script telah di-deploy sebagai 'Anyone'.\n3. Anda mempunyai sambungan internet.");
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.innerText = originalText;
+                    });
                 }
             } else {
-                alert("Tetapan URL Drive tidak dijumpai. PDF hanya disimpan secara tempatan.");
+                alert("Tetapan URL Drive tidak dijumpai dalam Admin.");
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         } catch (error) {
             console.error(error);
             alert("Ralat semasa menjana PDF.");
+            btn.disabled = false;
+            btn.innerText = originalText;
         }
-
-        btn.disabled = false;
-        btn.innerText = "JANA PDF & UPLOAD";
     }
 
     window.onload = () => {
