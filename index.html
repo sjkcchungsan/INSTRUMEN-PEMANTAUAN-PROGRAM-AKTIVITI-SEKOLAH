@@ -122,7 +122,7 @@
         th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; color: black; }
         th { background-color: #f2f2f2; text-align: center; }
 
-        /* Photo Grid */
+        /* Photo Grid (2 cols x 3 rows = 6 max) */
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .photo-item { border: 1px solid #ccc; padding: 5px; text-align: center; height: 75mm; display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
@@ -201,7 +201,7 @@
         <label>Cadangan Penambahbaikan</label>
         <textarea id="in_cadangan" oninput="sync()" rows="2"></textarea>
 
-        <label>Muat Naik Gambar (Susunan auto: 6 gambar per muka surat)</label>
+        <label>Muat Naik Gambar (6 keping setiap halaman)</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
 
         <div class="action-bar">
@@ -320,7 +320,7 @@
         const raw = localStorage.getItem('cs_settings');
         // URL Baharu dikemaskini di sini
         const def = {
-            drive_url: "https://script.google.com/macros/s/AKfycbxeMHvh_mhUc6UGWLV8lb_kRPu5O57Fwo_pnaNbpRCA8RKc7KxGdr36klvh7YX6iB-NHA/exec",
+            drive_url: "https://script.google.com/macros/s/AKfycbz2C3KnOSx0-28KNW_4Io5TS9-8pUaPqbdJk0DHf2a0XBNdgaTqqFg3-0ExwNXS6hExUg/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
             staf: [
                 "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
@@ -481,27 +481,36 @@
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
                     const base64 = reader.result.split(',')[1];
-                    const payload = JSON.stringify({ file: base64, filename: opt.filename });
                     
                     fetch(settings.drive_url, {
                         method: 'POST',
-                        mode: 'cors',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: payload
+                        mode: 'no-cors', 
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8',
+                        },
+                        body: JSON.stringify({ file: base64, filename: opt.filename })
                     })
-                    .then(res => res.json())
-                    .then(data => {
-                        if(data.status === "success") alert("✅ BERJAYA: Laporan disimpan ke Google Drive!");
-                        else alert("❌ GAGAL: " + data.message);
+                    .then(() => {
+                        alert("Proses muat naik selesai! Sila semak Google Drive anda.");
                     })
                     .catch(e => {
-                        console.error("Fetch error:", e);
-                        alert("❌ RALAT RANGKAIAN: Sila pastikan Google Script di-deploy sebagai 'Anyone' (Gunakan akaun Gmail peribadi jika perlu).");
+                        console.error(e);
+                        alert("Ralat sambungan ke Drive. Sila pastikan URL Web App adalah betul.");
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.innerText = originalText;
                     });
                 }
+            } else {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
-        } catch (error) { alert("Ralat semasa menjana PDF."); }
-        btn.disabled = false; btn.innerText = originalText;
+        } catch (error) { 
+            alert("Ralat semasa menjana PDF."); 
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
     }
 
     window.onload = () => { loadSettings(); initQuestions(); sync(); };
