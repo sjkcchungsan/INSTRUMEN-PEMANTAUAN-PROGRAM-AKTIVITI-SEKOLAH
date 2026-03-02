@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SJK(C) CHUNG SAN - Instrumen Pemantauan</title>
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --bg-color: #f4f7f6;
+            --admin-color: #e67e22;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container { display: flex; width: 100%; height: 100%; position: relative; }
+
+        /* Admin Button Overlay */
+        .admin-trigger {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            background: var(--admin-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Admin Modal */
+        #admin-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* Form Side */
+        .form-side {
+            width: 35%;
+            background: white;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        /* Preview Side */
+        .preview-side {
+            width: 65%;
+            background: #525659;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        .staff-checklist {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 5px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+        }
+        .staff-item { font-size: 11px; display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+        .staff-item input { width: auto; margin: 0; }
+
+        .rating-group { display: flex; background: #f9f9f9; padding: 8px; border-radius: 4px; gap: 10px; border: 1px solid #eee; }
+        .rating-option { display: flex; align-items: center; font-size: 11px; cursor: pointer; }
+        .rating-option input { width: auto; margin-right: 3px; }
+
+        /* PDF Styles */
+        #pdf-render { background: #525659; width: 210mm; box-sizing: border-box; }
+        .pdf-page { background: white; width: 210mm; min-height: 297mm; padding: 15mm; box-sizing: border-box; margin-bottom: 20px; position: relative; color: black; }
+        .school-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
+        .school-name { font-size: 18px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; }
+        th { background-color: #f2f2f2; text-align: center; }
+
+        /* Photo Grid in PDF (2 cols x 3 rows = 6 max) */
+        .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .photo-item { border: 1px solid #ccc; padding: 5px; text-align: center; height: 75mm; display: flex; flex-direction: column; align-items: center; justify-content: center;}
+        .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
+
+        .action-bar { position: sticky; bottom: 0; background: white; padding: 15px 0; border-top: 1px solid #eee; }
+        .btn-main { background: var(--success-color); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .small-btn { font-size: 10px; background: #ddd; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<button class="admin-trigger" onclick="checkAdminPassword()">⚙️ ADMIN</button>
+
+<!-- ADMIN MODAL -->
+<div id="admin-modal">
+    <div class="modal-content">
+        <h3>Tetapan Admin</h3>
+        <label>URL Google Drive (Google Apps Script)</label>
+        <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/...">
+        
+        <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
+        <textarea id="cfg_pemantau" rows="4"></textarea>
+
+        <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
+        <textarea id="cfg_staf" rows="10"></textarea>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn-main" style="background:var(--primary-color)" onclick="saveSettings()">Simpan Tetapan</button>
+            <button class="btn-main" style="background:#95a5a6" onclick="toggleAdmin(false)">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-container">
+    <div class="form-side">
+        <h2 style="margin-top:0; color:var(--primary-color); font-size: 1.2rem;">SJK(C) CHUNG SAN, MIRI</h2>
+        
+        <label>Nama Program / Aktiviti</label>
+        <input type="text" id="in_program" oninput="sync()" placeholder="Nama Program">
+
+        <div style="display:flex; gap:10px">
+            <div style="flex:1">
+                <label>Tarikh</label>
+                <input type="date" id="in_tarikh" oninput="handleDateChange()">
+            </div>
+            <div style="flex:1">
+                <label>Hari (Auto)</label>
+                <input type="text" id="in_hari" readonly style="background:#f0f0f0">
+            </div>
+        </div>
+
+        <label>Masa</label>
+        <input type="time" id="in_masa" oninput="sync()">
+
+        <label>Pemantau</label>
+        <select id="in_pemantau" onchange="sync()"></select>
+
+        <label>Staf Terlibat</label>
+        <button class="small-btn" onclick="toggleSelectAllStaff()">Pilih / Nyahpilih Semua</button>
+        <div class="staff-checklist" id="staf_checks"></div>
+
+        <div class="section-header">Elemen Pemantauan</div>
+        <div id="questions-form"></div>
+
+        <div class="section-header">Laporan & Media</div>
+        <label>Kekuatan</label>
+        <textarea id="in_kekuatan" oninput="sync()" rows="2"></textarea>
+        
+        <label>Kelemahan</label>
+        <textarea id="in_kelemahan" oninput="sync()" rows="2"></textarea>
+
+        <label>Muat Naik Gambar (Boleh banyak)</label>
+        <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
+
+        <div class="action-bar">
+            <button class="btn-main" id="btnJana" onclick="processAll()">JANA PDF & UPLOAD</button>
+        </div>
+    </div>
+
+    <div class="preview-side">
+        <div id="pdf-render">
+            <!-- Page 1: Main Report -->
+            <div class="pdf-page">
+                <div class="school-header">
+                    <div class="school-name">SJK(C) CHUNG SAN, MIRI</div>
+                    <div class="doc-title">INSTRUMEN PEMANTAUAN PROGRAM / AKTIVITI SEKOLAH</div>
+                </div>
+
+                <table>
+                    <tr><th width="20%">PROGRAM</th><td colspan="3" id="pv_program">-</td></tr>
+                    <tr>
+                        <th width="20%">TARIKH</th><td id="pv_tarikh">-</td>
+                        <th width="20%">HARI</th><td id="pv_hari">-</td>
+                    </tr>
+                    <tr>
+                        <th>MASA</th><td id="pv_masa">-</td>
+                        <th>PEMANTAU</th><td id="pv_pemantau">-</td>
+                    </tr>
+                    <tr>
+                        <th>STAF TERLIBAT</th>
+                        <td colspan="3" id="pv_staf" style="font-size:9px; white-space: pre-wrap;">-</td>
+                    </tr>
+                </table>
+
+                <table id="pv_table">
+                    <thead>
+                        <tr>
+                            <th width="5%">BIL</th>
+                            <th>ELEMEN PEMANTAUAN</th>
+                            <th width="10%">YA</th>
+                            <th width="10%">TIDAK</th>
+                            <th width="10%">TB</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pv_body"></tbody>
+                </table>
+
+                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <div style="font-weight:bold; font-size:10px;">KEKUATAN:</div>
+                        <div id="pv_kekuatan" style="font-size:9px; border:1px solid #ddd; min-height:40px; padding:3px;">-</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:bold; font-size:10px;">KELEMAHAN:</div>
+                        <div id="pv_kelemahan" style="font-size:9px; border:1px solid #ddd; min-height:40px; padding:3px;">-</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; display: flex; justify-content: flex-end;">
+                    <div style="text-align: center; width: 150px;">
+                        <div style="border-bottom: 1px solid black; height: 30px;"></div>
+                        <div style="font-size: 10px; margin-top: 5px;">Tandatangan Pemantau</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Pages for Photos will be injected here -->
+            <div id="photo-pages-container"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        "Pelaksanaan program/aktiviti mengikut takwim.",
+        "Program dilaksanakan terancang & sesuai keperluan.",
+        "Mengambil kira isu pembelajaran/potensi murid.",
+        "Kemudahan/bahan/kelengkapan dalam keadaan selamat.",
+        "Kemudahan/bahan/kelengkapan mencukupi.",
+        "Murid terlibat secara aktif semasa aktiviti.",
+        "Disiplin murid terkawal.",
+        "Program berjalan lancar sepanjang pelaksanaan.",
+        "Kehadiran murid direkodkan.",
+        "Program menarik dan menggalakkan kehadiran."
+    ];
+
+    let allPhotos = [];
+    let allSelected = false;
+
+    // --- ADMIN ACCESS ---
+    function checkAdminPassword() {
+        const pw = prompt("Masukkan Kata Laluan Admin:");
+        if (pw === "YCC9102") {
+            toggleAdmin(true);
+        } else {
+            alert("Kata Laluan Salah!");
+        }
+    }
+
+    function toggleAdmin(show) { document.getElementById('admin-modal').style.display = show ? 'flex' : 'none'; }
+
+    function saveSettings() {
+        const settings = {
+            drive_url: document.getElementById('cfg_drive_url').value,
+            pemantau: document.getElementById('cfg_pemantau').value.split('\n').filter(x => x.trim()),
+            staf: document.getElementById('cfg_staf').value.split('\n').filter(x => x.trim())
+        };
+        localStorage.setItem('cs_settings', JSON.stringify(settings));
+        loadSettings();
+        toggleAdmin(false);
+        alert("Tetapan Disimpan!");
+    }
+
+    function loadSettings() {
+        const raw = localStorage.getItem('cs_settings');
+        // Senarai Nama Staf yang dikemas kini berdasarkan permintaan anda
+        const def = {
+            drive_url: "https://script.google.com/macros/s/AKfycbz6Dzpkvqa-FNYSd7g8DFB7Kz2MuXHGzhGSOwCr2f3NG7T0ai8Om3eEH_twNMwYN_kOZQ/exec",
+            pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
+            staf: [
+                "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
+                "FONG CUI FUNG", "GOH SU CHING", "KONG ZHE FONG", "LAU YUN HEE", "LING LEE ANN",
+                "ROLAND TING HOCK SING", "SHARMAINE DAPHNE ANAK SLYVESTER BAKAR", "STEPHEN HII YII NAN",
+                "TU HIONG HIONG", "UNICE WONG WEN WEN", "WEE CHUN YANG", "WONG CHUI LING",
+                "YUKI NG JIAJING", "ZAFRULLAH BIN MOHD SABRI"
+            ]
+        };
+        const settings = raw ? JSON.parse(raw) : def;
+
+        document.getElementById('cfg_drive_url').value = settings.drive_url;
+        document.getElementById('cfg_pemantau').value = settings.pemantau.join('\n');
+        document.getElementById('cfg_staf').value = settings.staf.join('\n');
+
+        const sel = document.getElementById('in_pemantau');
+        sel.innerHTML = '<option value="">-- Pilih --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
+        
+        const checkArea = document.getElementById('staf_checks');
+        checkArea.innerHTML = settings.staf.map((s, i) => `
+            <label class="staff-item">
+                <input type="checkbox" name="staf_check" value="${s}" onchange="sync()"> ${s}
+            </label>
+        `).join('');
+    }
+
+    function toggleSelectAllStaff() {
+        const checkboxes = document.querySelectorAll('input[name="staf_check"]');
+        allSelected = !allSelected;
+        checkboxes.forEach(cb => cb.checked = allSelected);
+        sync();
+    }
+
+    // --- FORM LOGIC ---
+    function handleDateChange() {
+        const d = document.getElementById('in_tarikh').value;
+        if(d) {
+            const hariList = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
+            const dateObj = new Date(d);
+            document.getElementById('in_hari').value = hariList[dateObj.getDay()];
+        }
+        sync();
+    }
+
+    function handlePhotos(input) {
+        allPhotos = [];
+        const files = Array.from(input.files);
+        let loaded = 0;
+        
+        if (files.length === 0) {
+            document.getElementById('photo-pages-container').innerHTML = '';
+            return;
+        }
+
+        files.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                allPhotos.push(e.target.result);
+                loaded++;
+                if(loaded === files.length) renderPhotoPages();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderPhotoPages() {
+        const container = document.getElementById('photo-pages-container');
+        container.innerHTML = '';
+        
+        const chunks = [];
+        for (let i = 0; i < allPhotos.length; i += 6) {
+            chunks.push(allPhotos.slice(i, i + 6));
+        }
+
+        chunks.forEach((chunk, index) => {
+            const page = document.createElement('div');
+            page.className = 'pdf-page';
+            page.innerHTML = `
+                <div class="school-header">
+                    <div class="school-name">SJK(C) CHUNG SAN, MIRI</div>
+                    <div class="doc-title">LAMPIRAN BERGAMBAR (MUKA SURAT ${index + 1})</div>
+                </div>
+                <div class="photo-grid">
+                    ${chunk.map((src, i) => `
+                        <div class="photo-item">
+                            <img src="${src}">
+                            <div style="font-size:9px; margin-top:5px;">Gambar ${index * 6 + i + 1}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.appendChild(page);
+        });
+    }
+
+    function sync() {
+        document.getElementById('pv_program').innerText = document.getElementById('in_program').value || '-';
+        document.getElementById('pv_tarikh').innerText = document.getElementById('in_tarikh').value || '-';
+        document.getElementById('pv_hari').innerText = document.getElementById('in_hari').value || '-';
+        document.getElementById('pv_masa').innerText = document.getElementById('in_masa').value || '-';
+        document.getElementById('pv_pemantau').innerText = document.getElementById('in_pemantau').value || '-';
+        document.getElementById('pv_kekuatan').innerText = document.getElementById('in_kekuatan').value || '-';
+        document.getElementById('pv_kelemahan').innerText = document.getElementById('in_kelemahan').value || '-';
+
+        const selectedStaff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
+        document.getElementById('pv_staf').innerText = selectedStaff.join(', ') || '-';
+
+        questions.forEach((_, i) => {
+            const b = i + 1;
+            const v = document.querySelector(`input[name="q${b}"]:checked`).value;
+            document.getElementById(`pv_${b}_ya`).innerText = (v === 'Ya') ? '/' : '';
+            document.getElementById(`pv_${b}_tidak`).innerText = (v === 'Tidak') ? '/' : '';
+            document.getElementById(`pv_${b}_tb`).innerText = (v === 'TB') ? '/' : '';
+        });
+    }
+
+    function initQuestions() {
+        const f = document.getElementById('questions-form');
+        const b = document.getElementById('pv_body');
+        f.innerHTML = '';
+        b.innerHTML = '';
+        questions.forEach((q, i) => {
+            const n = i + 1;
+            f.innerHTML += `
+                <label>${n}. ${q}</label>
+                <div class="rating-group">
+                    <label class="rating-option"><input type="radio" name="q${n}" value="Ya" checked onchange="sync()"> Ya</label>
+                    <label class="rating-option"><input type="radio" name="q${n}" value="Tidak" onchange="sync()"> Tidak</label>
+                    <label class="rating-option"><input type="radio" name="q${n}" value="TB" onchange="sync()"> TB</label>
+                </div>
+            `;
+            b.innerHTML += `
+                <tr>
+                    <td style="text-align:center">${n}</td>
+                    <td>${q}</td>
+                    <td id="pv_${n}_ya" style="text-align:center">/</td>
+                    <td id="pv_${n}_tidak" style="text-align:center"></td>
+                    <td id="pv_${n}_tb" style="text-align:center"></td>
+                </tr>
+            `;
+        });
+    }
+
+    async function processAll() {
+        const btn = document.getElementById('btnJana');
+        btn.disabled = true;
+        btn.innerText = "Menjana PDF...";
+
+        const element = document.getElementById('pdf-render');
+        const opt = {
+            margin: 0,
+            filename: `Laporan_${document.getElementById('in_program').value || 'SJKC'}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            html2pdf().set(opt).from(element).save();
+
+            const settings = JSON.parse(localStorage.getItem('cs_settings') || '{}');
+            if(settings.drive_url) {
+                const reader = new FileReader();
+                reader.readAsDataURL(pdfBlob);
+                reader.onloadend = function() {
+                    const base64 = reader.result.split(',')[1];
+                    fetch(settings.drive_url, {
+                        method: 'POST',
+                        body: JSON.stringify({ file: base64, filename: opt.filename })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.status === "success") alert("Berjaya upload ke Drive!");
+                        else alert("Gagal hantar ke Drive: " + (data.message || 'Ralat tidak diketahui'));
+                    })
+                    .catch(e => alert("Ralat sambungan ke Drive. Semak URL Macro anda."));
+                }
+            } else {
+                alert("Tetapan URL Drive tidak dijumpai. PDF hanya disimpan secara tempatan.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Ralat semasa menjana PDF.");
+        }
+
+        btn.disabled = false;
+        btn.innerText = "JANA PDF & UPLOAD";
+    }
+
+    window.onload = () => {
+        loadSettings();
+        initQuestions();
+    };
+</script>
+
+</body>
+</html>
