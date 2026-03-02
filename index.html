@@ -306,7 +306,7 @@
     function loadSettings() {
         const raw = localStorage.getItem('cs_settings');
         const def = {
-            drive_url: "https://script.google.com/macros/s/AKfycbz6Dzpkvqa-FNYSd7g8DFB7Kz2MuXHGzhGSOwCr2f3NG7T0ai8Om3eEH_twNMwYN_kOZQ/exec",
+            drive_url: "https://script.google.com/macros/s/AKfycbytJGwQFgZFE6OJPKvliFGIQ10wlw0ykUFH_blXQK97cd4rG1tXBWBr_j8aQ7Z5gJqsfA/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
             staf: [
                 "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
@@ -328,7 +328,6 @@
         const url = document.getElementById('cfg_drive_url').value;
         if(!url) return alert("Sila masukkan URL Macro dahulu.");
         try {
-            // Menggunakan no-cors untuk menguji kewujudan endpoint
             await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
             alert("Sambungan dikesan. Sila pastikan Script di-deploy sebagai 'Anyone' untuk muat naik berfungsi.");
         } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
