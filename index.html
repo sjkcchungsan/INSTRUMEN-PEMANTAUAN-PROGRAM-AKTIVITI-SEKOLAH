@@ -122,7 +122,7 @@
         th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; color: black; }
         th { background-color: #f2f2f2; text-align: center; }
 
-        /* Photo Grid (2 cols x 3 rows = 6 max per page) */
+        /* Photo Grid */
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .photo-item { border: 1px solid #ccc; padding: 5px; text-align: center; height: 75mm; display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
@@ -147,10 +147,10 @@
         <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/.../exec">
         <button class="btn-main btn-test" onclick="testConnection()">Uji Sambungan</button>
         
-        <label>Senarai Pemantau (Satu nama satu baris)</label>
+        <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
         <textarea id="cfg_pemantau" rows="4"></textarea>
 
-        <label>Senarai Staf Terlibat (Satu nama satu baris)</label>
+        <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
         <textarea id="cfg_staf" rows="10"></textarea>
 
         <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -318,9 +318,9 @@
 
     function loadSettings() {
         const raw = localStorage.getItem('cs_settings');
-        // Gunakan Web App URL yang anda berikan sebagai default
+        // URL Baharu dikemaskini di sini
         const def = {
-            drive_url: "https://script.google.com/macros/s/AKfycbybce1FDGtzLQGrdkxX0rPUzNitJ2Z2CjSChhbkDy6UguWuviiig6IjYctkf5DOEp-1/exec",
+            drive_url: "https://script.google.com/macros/s/AKfycbxeMHvh_mhUc6UGWLV8lb_kRPu5O57Fwo_pnaNbpRCA8RKc7KxGdr36klvh7YX6iB-NHA/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
             staf: [
                 "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
@@ -347,7 +347,6 @@
         const url = document.getElementById('cfg_drive_url').value;
         if(!url) return alert("Sila masukkan URL Macro dahulu.");
         try {
-            // Mode no-cors digunakan untuk mengesan kewujudan URL tanpa sekatan keselamatan
             await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
             alert("⚠️ Ujian sambungan dihantar.\n\nJika anda masih mendapat RALAT RANGKAIAN semasa upload, pastikan anda menekan butang 'Authorize Access' di Google Apps Script dan klik 'Advanced' -> 'Go to... (unsafe)'.");
         } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
