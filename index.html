@@ -122,7 +122,7 @@
         th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; color: black; }
         th { background-color: #f2f2f2; text-align: center; }
 
-        /* Photo Grid */
+        /* Photo Grid (2 cols x 3 rows = 6 max per page) */
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .photo-item { border: 1px solid #ccc; padding: 5px; text-align: center; height: 75mm; display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
@@ -143,14 +143,14 @@
     <div class="modal-content">
         <h3 style="color: black;">Tetapan Admin</h3>
         
-        <label>URL Google Drive (Google Apps Script)</label>
-        <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/...">
+        <label>URL Google Drive (Web App URL)</label>
+        <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/.../exec">
         <button class="btn-main btn-test" onclick="testConnection()">Uji Sambungan</button>
         
-        <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
+        <label>Senarai Pemantau (Satu nama satu baris)</label>
         <textarea id="cfg_pemantau" rows="4"></textarea>
 
-        <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
+        <label>Senarai Staf Terlibat (Satu nama satu baris)</label>
         <textarea id="cfg_staf" rows="10"></textarea>
 
         <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -201,7 +201,7 @@
         <label>Cadangan Penambahbaikan</label>
         <textarea id="in_cadangan" oninput="sync()" rows="2"></textarea>
 
-        <label>Muat Naik Gambar (6 keping setiap halaman)</label>
+        <label>Muat Naik Gambar (Susunan auto: 6 gambar per muka surat)</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
 
         <div class="action-bar">
@@ -296,6 +296,7 @@
     let allPhotos = [];
     let allSelected = false;
 
+    // --- ADMIN ACCESS ---
     function checkAdminPassword() {
         const pw = prompt("Masukkan Kata Laluan Admin:");
         if (pw === "YCC9102") { toggleAdmin(true); } else { alert("Kata Laluan Salah!"); }
@@ -317,6 +318,7 @@
 
     function loadSettings() {
         const raw = localStorage.getItem('cs_settings');
+        // Gunakan Web App URL yang anda berikan sebagai default
         const def = {
             drive_url: "https://script.google.com/macros/s/AKfycbybce1FDGtzLQGrdkxX0rPUzNitJ2Z2CjSChhbkDy6UguWuviiig6IjYctkf5DOEp-1/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
@@ -329,19 +331,25 @@
             ]
         };
         const settings = raw ? JSON.parse(raw) : def;
+
         document.getElementById('cfg_drive_url').value = settings.drive_url;
         document.getElementById('cfg_pemantau').value = settings.pemantau.join('\n');
         document.getElementById('cfg_staf').value = settings.staf.join('\n');
-        document.getElementById('in_pemantau').innerHTML = '<option value="">-- Pilih --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
-        document.getElementById('staf_checks').innerHTML = settings.staf.map(s => `<label class="staff-item"><input type="checkbox" name="staf_check" value="${s}" onchange="sync()"> ${s}</label>`).join('');
+
+        const sel = document.getElementById('in_pemantau');
+        sel.innerHTML = '<option value="">-- Pilih --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
+        
+        const checkArea = document.getElementById('staf_checks');
+        checkArea.innerHTML = settings.staf.map(s => `<label class="staff-item"><input type="checkbox" name="staf_check" value="${s}" onchange="sync()"> ${s}</label>`).join('');
     }
 
     async function testConnection() {
         const url = document.getElementById('cfg_drive_url').value;
         if(!url) return alert("Sila masukkan URL Macro dahulu.");
         try {
+            // Mode no-cors digunakan untuk mengesan kewujudan URL tanpa sekatan keselamatan
             await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
-            alert("⚠️ Cubaan Uji Sambungan Dihantar.\n\nJika anda masih mendapat RALAT RANGKAIAN semasa upload, sila pastikan anda menekan butang 'Authorize Access' di Google Apps Script dan klik 'Advanced' -> 'Go to... (unsafe)'.");
+            alert("⚠️ Ujian sambungan dihantar.\n\nJika anda masih mendapat RALAT RANGKAIAN semasa upload, pastikan anda menekan butang 'Authorize Access' di Google Apps Script dan klik 'Advanced' -> 'Go to... (unsafe)'.");
         } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
     }
 
@@ -384,7 +392,20 @@
             const chunk = allPhotos.slice(i, i + 6);
             const page = document.createElement('div');
             page.className = 'pdf-page';
-            page.innerHTML = `<div class="school-header"><div class="school-name">SJK(C) CHUNG SAN</div><div class="doc-title">LAMPIRAN BERGAMBAR (HAL ${Math.floor(i/6)+1})</div></div><div class="photo-grid">${chunk.map((src, idx) => `<div class="photo-item"><img src="${src}"><div style="font-size:9px; margin-top:5px;">Gambar ${i + idx + 1}</div></div>`).join('')}</div>`;
+            page.innerHTML = `
+                <div class="school-header">
+                    <div class="school-name">SJK(C) CHUNG SAN</div>
+                    <div class="doc-title">LAMPIRAN BERGAMBAR (HALAMAN ${Math.floor(i/6)+1})</div>
+                </div>
+                <div class="photo-grid">
+                    ${chunk.map((src, idx) => `
+                        <div class="photo-item">
+                            <img src="${src}">
+                            <div style="font-size:9px; margin-top:5px;">Gambar ${i + idx + 1}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
             container.appendChild(page);
         }
     }
@@ -399,8 +420,10 @@
         document.getElementById('pv_kekuatan').innerText = getVal('in_kekuatan');
         document.getElementById('pv_kelemahan').innerText = getVal('in_kelemahan');
         document.getElementById('pv_cadangan').innerText = getVal('in_cadangan');
+
         const staff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
         document.getElementById('pv_staf').innerText = staff.join(', ') || '-';
+
         questions.forEach((_, i) => {
             const n = i + 1;
             const v = document.querySelector(`input[name="q${n}"]:checked`)?.value || "Ya";
@@ -415,8 +438,23 @@
         f.innerHTML = ''; b.innerHTML = '';
         questions.forEach((q, i) => {
             const n = i + 1;
-            f.innerHTML += `<label style="color: black;">${n}. ${q}</label><div class="rating-group"><label class="rating-option"><input type="radio" name="q${n}" value="Ya" checked onchange="sync()"> Ya</label><label class="rating-option"><input type="radio" name="q${n}" value="Tidak" onchange="sync()"> Tidak</label><label class="rating-option"><input type="radio" name="q${n}" value="TB" onchange="sync()"> TB</label></div>`;
-            b.innerHTML += `<tr><td style="text-align:center">${n}</td><td>${q}</td><td id="pv_${n}_ya" style="text-align:center">/</td><td id="pv_${n}_tidak" style="text-align:center"></td><td id="pv_${n}_tb" style="text-align:center"></td></tr>`;
+            f.innerHTML += `
+                <label style="color: black;">${n}. ${q}</label>
+                <div class="rating-group">
+                    <label class="rating-option"><input type="radio" name="q${n}" value="Ya" checked onchange="sync()"> Ya</label>
+                    <label class="rating-option"><input type="radio" name="q${n}" value="Tidak" onchange="sync()"> Tidak</label>
+                    <label class="rating-option"><input type="radio" name="q${n}" value="TB" onchange="sync()"> TB</label>
+                </div>
+            `;
+            b.innerHTML += `
+                <tr>
+                    <td style="text-align:center">${n}</td>
+                    <td>${q}</td>
+                    <td id="pv_${n}_ya" style="text-align:center">/</td>
+                    <td id="pv_${n}_tidak" style="text-align:center"></td>
+                    <td id="pv_${n}_tb" style="text-align:center"></td>
+                </tr>
+            `;
         });
     }
 
@@ -426,7 +464,8 @@
         btn.disabled = true; btn.innerText = "Menjana PDF...";
         const element = document.getElementById('pdf-render');
         const opt = {
-            margin: 0, filename: `Laporan_${document.getElementById('in_program').value || 'SJKC_CHUNGSAN'}.pdf`,
+            margin: 0, 
+            filename: `Laporan_${document.getElementById('in_program').value || 'SJKC_CHUNGSAN'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -445,8 +484,6 @@
                     const base64 = reader.result.split(',')[1];
                     const payload = JSON.stringify({ file: base64, filename: opt.filename });
                     
-                    // Menggunakan teknik 'Simple Request' dengan text/plain 
-                    // bagi mengelakkan sekatan CORS/Pre-flight pelayar
                     fetch(settings.drive_url, {
                         method: 'POST',
                         mode: 'cors',
@@ -460,7 +497,7 @@
                     })
                     .catch(e => {
                         console.error("Fetch error:", e);
-                        alert("❌ RALAT RANGKAIAN: Masih tidak dapat menghubungi Google Drive.\n\nSila pastikan anda telah menekan butang 'Authorize Access' semasa Deploy di Google Script.");
+                        alert("❌ RALAT RANGKAIAN: Sila pastikan Google Script di-deploy sebagai 'Anyone' (Gunakan akaun Gmail peribadi jika perlu).");
                     });
                 }
             }
