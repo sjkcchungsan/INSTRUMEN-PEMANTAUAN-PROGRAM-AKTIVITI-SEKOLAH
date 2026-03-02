@@ -147,10 +147,10 @@
         <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/...">
         <button class="btn-main btn-test" onclick="testConnection()">Uji Sambungan</button>
         
-        <label>Senarai Pemantau (Satu nama satu baris)</label>
+        <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
         <textarea id="cfg_pemantau" rows="4"></textarea>
 
-        <label>Senarai Staf Terlibat (Satu nama satu baris)</label>
+        <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
         <textarea id="cfg_staf" rows="10"></textarea>
 
         <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -197,6 +197,9 @@
         
         <label>Kelemahan</label>
         <textarea id="in_kelemahan" oninput="sync()" rows="2"></textarea>
+
+        <label>Cadangan Penambahbaikan</label>
+        <textarea id="in_cadangan" oninput="sync()" rows="2"></textarea>
 
         <label>Muat Naik Gambar (6 keping setiap halaman)</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
@@ -255,10 +258,19 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 40px; display: flex; justify-content: flex-end;">
+                <div style="margin-top: 10px;">
+                    <div style="font-weight:bold; font-size:10px;">CADANGAN PENAMBAHBAIKAN:</div>
+                    <div id="pv_cadangan" style="font-size:9px; border:1px solid #ddd; min-height:30px; padding:3px;">-</div>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; justify-content: space-between;">
                     <div style="text-align: center; width: 150px;">
                         <div style="border-bottom: 1px solid black; height: 30px;"></div>
                         <div style="font-size: 10px; margin-top: 5px;">Tandatangan Pemantau</div>
+                    </div>
+                    <div style="text-align: center; width: 150px;">
+                        <div style="border-bottom: 1px solid black; height: 30px;"></div>
+                        <div style="font-size: 10px; margin-top: 5px;">Disahkan Oleh</div>
                     </div>
                 </div>
             </div>
@@ -305,8 +317,9 @@
 
     function loadSettings() {
         const raw = localStorage.getItem('cs_settings');
+        // URL Baharu dikemaskini di sini
         const def = {
-            drive_url: "https://script.google.com/macros/s/AKfycbytJGwQFgZFE6OJPKvliFGIQ10wlw0ykUFH_blXQK97cd4rG1tXBWBr_j8aQ7Z5gJqsfA/exec",
+            drive_url: "https://script.google.com/macros/s/AKfycbybce1FDGtzLQGrdkxX0rPUzNitJ2Z2CjSChhbkDy6UguWuviiig6IjYctkf5DOEp-1/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
             staf: [
                 "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
@@ -329,7 +342,7 @@
         if(!url) return alert("Sila masukkan URL Macro dahulu.");
         try {
             await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
-            alert("Sambungan dikesan. Sila pastikan Script di-deploy sebagai 'Anyone' untuk muat naik berfungsi.");
+            alert("⚠️ Sambungan dikesan.\n\nJika anda masih mendapat RALAT RANGKAIAN, ini bermakna akaun MOE menyekat akses Public (Anyone).\n\nSOLUSI: Sila gunakan akaun Gmail PERIBADI (@gmail.com) untuk membuat Google Apps Script tersebut.");
         } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
     }
 
@@ -386,6 +399,7 @@
         document.getElementById('pv_pemantau').innerText = getVal('in_pemantau');
         document.getElementById('pv_kekuatan').innerText = getVal('in_kekuatan');
         document.getElementById('pv_kelemahan').innerText = getVal('in_kelemahan');
+        document.getElementById('pv_cadangan').innerText = getVal('in_cadangan');
         const staff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
         document.getElementById('pv_staf').innerText = staff.join(', ') || '-';
         questions.forEach((_, i) => {
@@ -423,6 +437,7 @@
             const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
             html2pdf().set(opt).from(element).save();
             const settings = JSON.parse(localStorage.getItem('cs_settings') || '{}');
+            
             if(settings.drive_url) {
                 btn.innerText = "Memuat naik...";
                 const reader = new FileReader();
@@ -442,7 +457,10 @@
                         if(data.status === "success") alert("✅ BERJAYA: Laporan disimpan ke Google Drive!");
                         else alert("❌ GAGAL: " + data.message);
                     })
-                    .catch(e => alert("❌ RALAT: Sila pastikan Google Script di-deploy sebagai 'Anyone'."));
+                    .catch(e => {
+                        console.error("Fetch error:", e);
+                        alert("❌ RALAT RANGKAIAN: Tidak dapat menghubungi Google Script.\n\nSila gunakan akaun GMAIL PERIBADI jika akaun MOE menyekat akses.");
+                    });
                 }
             }
         } catch (error) { alert("Ralat semasa menjana PDF."); }
