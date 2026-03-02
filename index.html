@@ -122,13 +122,14 @@
         th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; color: black; }
         th { background-color: #f2f2f2; text-align: center; }
 
-        /* Photo Grid in PDF (2 cols x 3 rows = 6 max) */
+        /* Photo Grid */
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .photo-item { border: 1px solid #ccc; padding: 5px; text-align: center; height: 75mm; display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
 
         .action-bar { position: sticky; bottom: 0; background: white; padding: 15px 0; border-top: 1px solid #eee; }
         .btn-main { background: var(--success-color); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-test { background: #3498db; margin-bottom: 10px; padding: 5px 10px; font-size: 11px; width: auto; }
         
         .small-btn { font-size: 10px; background: #ddd; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-bottom: 5px; }
     </style>
@@ -141,13 +142,15 @@
 <div id="admin-modal">
     <div class="modal-content">
         <h3 style="color: black;">Tetapan Admin</h3>
+        
         <label>URL Google Drive (Google Apps Script)</label>
         <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/...">
+        <button class="btn-main btn-test" onclick="testConnection()">Uji Sambungan</button>
         
-        <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
+        <label>Senarai Pemantau (Satu nama satu baris)</label>
         <textarea id="cfg_pemantau" rows="4"></textarea>
 
-        <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
+        <label>Senarai Staf Terlibat (Satu nama satu baris)</label>
         <textarea id="cfg_staf" rows="10"></textarea>
 
         <div style="margin-top: 20px; display: flex; gap: 10px;">
@@ -159,7 +162,7 @@
 
 <div class="app-container">
     <div class="form-side">
-        <h2 style="margin-top:0; color:var(--primary-color); font-size: 1.2rem;">SJK(C) CHUNG SAN, MIRI</h2>
+        <h2 style="margin-top:0; color:var(--primary-color); font-size: 1.2rem;">SJK(C) CHUNG SAN</h2>
         
         <label>Nama Program / Aktiviti</label>
         <input type="text" id="in_program" oninput="sync()" placeholder="Nama Program">
@@ -195,20 +198,20 @@
         <label>Kelemahan</label>
         <textarea id="in_kelemahan" oninput="sync()" rows="2"></textarea>
 
-        <label>Muat Naik Gambar (6 keping setiap halaman PDF)</label>
+        <label>Muat Naik Gambar (6 keping setiap halaman)</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
 
         <div class="action-bar">
-            <button class="btn-main" id="btnJana" onclick="processAll()">JANA PDF & UPLOAD</button>
+            <button class="btn-main" id="btnJana" onclick="processAll()">JANA PDF & MUAT NAIK</button>
         </div>
     </div>
 
     <div class="preview-side">
         <div id="pdf-render">
-            <!-- Page 1: Main Report -->
+            <!-- Halaman 1: Laporan Utama -->
             <div class="pdf-page">
                 <div class="school-header">
-                    <div class="school-name">SJK(C) CHUNG SAN, MIRI</div>
+                    <div class="school-name">SJK(C) CHUNG SAN</div>
                     <div class="doc-title">INSTRUMEN PEMANTAUAN PROGRAM / AKTIVITI SEKOLAH</div>
                 </div>
 
@@ -259,8 +262,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Additional Pages for Photos will be injected here -->
             <div id="photo-pages-container"></div>
         </div>
     </div>
@@ -283,14 +284,9 @@
     let allPhotos = [];
     let allSelected = false;
 
-    // --- ADMIN ACCESS ---
     function checkAdminPassword() {
         const pw = prompt("Masukkan Kata Laluan Admin:");
-        if (pw === "YCC9102") {
-            toggleAdmin(true);
-        } else {
-            alert("Kata Laluan Salah!");
-        }
+        if (pw === "YCC9102") { toggleAdmin(true); } else { alert("Kata Laluan Salah!"); }
     }
 
     function toggleAdmin(show) { document.getElementById('admin-modal').style.display = show ? 'flex' : 'none'; }
@@ -321,20 +317,21 @@
             ]
         };
         const settings = raw ? JSON.parse(raw) : def;
-
         document.getElementById('cfg_drive_url').value = settings.drive_url;
         document.getElementById('cfg_pemantau').value = settings.pemantau.join('\n');
         document.getElementById('cfg_staf').value = settings.staf.join('\n');
+        document.getElementById('in_pemantau').innerHTML = '<option value="">-- Pilih --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
+        document.getElementById('staf_checks').innerHTML = settings.staf.map(s => `<label class="staff-item"><input type="checkbox" name="staf_check" value="${s}" onchange="sync()"> ${s}</label>`).join('');
+    }
 
-        const sel = document.getElementById('in_pemantau');
-        sel.innerHTML = '<option value="">-- Pilih --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
-        
-        const checkArea = document.getElementById('staf_checks');
-        checkArea.innerHTML = settings.staf.map((s, i) => `
-            <label class="staff-item">
-                <input type="checkbox" name="staf_check" value="${s}" onchange="sync()"> ${s}
-            </label>
-        `).join('');
+    async function testConnection() {
+        const url = document.getElementById('cfg_drive_url').value;
+        if(!url) return alert("Sila masukkan URL Macro dahulu.");
+        try {
+            // Menggunakan no-cors untuk menguji kewujudan endpoint
+            await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
+            alert("Sambungan dikesan. Sila pastikan Script di-deploy sebagai 'Anyone' untuk muat naik berfungsi.");
+        } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
     }
 
     function toggleSelectAllStaff() {
@@ -347,9 +344,8 @@
     function handleDateChange() {
         const d = document.getElementById('in_tarikh').value;
         if(d) {
-            const hariList = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
-            const dateObj = new Date(d);
-            document.getElementById('in_hari').value = hariList[dateObj.getDay()];
+            const days = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
+            document.getElementById('in_hari').value = days[new Date(d).getDay()];
         }
         sync();
     }
@@ -358,12 +354,7 @@
         allPhotos = [];
         const files = Array.from(input.files);
         let loaded = 0;
-        
-        if (files.length === 0) {
-            document.getElementById('photo-pages-container').innerHTML = '';
-            return;
-        }
-
+        if (files.length === 0) { document.getElementById('photo-pages-container').innerHTML = ''; return; }
         files.forEach((file) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -378,94 +369,52 @@
     function renderPhotoPages() {
         const container = document.getElementById('photo-pages-container');
         container.innerHTML = '';
-        
-        const chunks = [];
         for (let i = 0; i < allPhotos.length; i += 6) {
-            chunks.push(allPhotos.slice(i, i + 6));
-        }
-
-        chunks.forEach((chunk, index) => {
+            const chunk = allPhotos.slice(i, i + 6);
             const page = document.createElement('div');
             page.className = 'pdf-page';
-            page.innerHTML = `
-                <div class="school-header">
-                    <div class="school-name">SJK(C) CHUNG SAN, MIRI</div>
-                    <div class="doc-title">LAMPIRAN BERGAMBAR (MUKA SURAT ${index + 1})</div>
-                </div>
-                <div class="photo-grid">
-                    ${chunk.map((src, i) => `
-                        <div class="photo-item">
-                            <img src="${src}">
-                            <div style="font-size:9px; margin-top:5px;">Gambar ${index * 6 + i + 1}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            page.innerHTML = `<div class="school-header"><div class="school-name">SJK(C) CHUNG SAN</div><div class="doc-title">LAMPIRAN BERGAMBAR (HAL ${Math.floor(i/6)+1})</div></div><div class="photo-grid">${chunk.map((src, idx) => `<div class="photo-item"><img src="${src}"><div style="font-size:9px; margin-top:5px;">Gambar ${i + idx + 1}</div></div>`).join('')}</div>`;
             container.appendChild(page);
-        });
+        }
     }
 
     function sync() {
-        document.getElementById('pv_program').innerText = document.getElementById('in_program').value || '-';
-        document.getElementById('pv_tarikh').innerText = document.getElementById('in_tarikh').value || '-';
-        document.getElementById('pv_hari').innerText = document.getElementById('in_hari').value || '-';
-        document.getElementById('pv_masa').innerText = document.getElementById('in_masa').value || '-';
-        document.getElementById('pv_pemantau').innerText = document.getElementById('in_pemantau').value || '-';
-        document.getElementById('pv_kekuatan').innerText = document.getElementById('in_kekuatan').value || '-';
-        document.getElementById('pv_kelemahan').innerText = document.getElementById('in_kelemahan').value || '-';
-
-        const selectedStaff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
-        document.getElementById('pv_staf').innerText = selectedStaff.join(', ') || '-';
-
+        const getVal = (id) => document.getElementById(id).value || '-';
+        document.getElementById('pv_program').innerText = getVal('in_program');
+        document.getElementById('pv_tarikh').innerText = getVal('in_tarikh');
+        document.getElementById('pv_hari').innerText = getVal('in_hari');
+        document.getElementById('pv_masa').innerText = getVal('in_masa');
+        document.getElementById('pv_pemantau').innerText = getVal('in_pemantau');
+        document.getElementById('pv_kekuatan').innerText = getVal('in_kekuatan');
+        document.getElementById('pv_kelemahan').innerText = getVal('in_kelemahan');
+        const staff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
+        document.getElementById('pv_staf').innerText = staff.join(', ') || '-';
         questions.forEach((_, i) => {
-            const b = i + 1;
-            const radios = document.getElementsByName(`q${b}`);
-            let val = "Ya";
-            for(let r of radios) { if(r.checked) val = r.value; }
-            
-            document.getElementById(`pv_${b}_ya`).innerText = (val === 'Ya') ? '/' : '';
-            document.getElementById(`pv_${b}_tidak`).innerText = (val === 'Tidak') ? '/' : '';
-            document.getElementById(`pv_${b}_tb`).innerText = (val === 'TB') ? '/' : '';
+            const n = i + 1;
+            const v = document.querySelector(`input[name="q${n}"]:checked`)?.value || "Ya";
+            document.getElementById(`pv_${n}_ya`).innerText = (v === 'Ya') ? '/' : '';
+            document.getElementById(`pv_${n}_tidak`).innerText = (v === 'Tidak') ? '/' : '';
+            document.getElementById(`pv_${n}_tb`).innerText = (v === 'TB') ? '/' : '';
         });
     }
 
     function initQuestions() {
-        const f = document.getElementById('questions-form');
-        const b = document.getElementById('pv_body');
-        f.innerHTML = '';
-        b.innerHTML = '';
+        const f = document.getElementById('questions-form'), b = document.getElementById('pv_body');
+        f.innerHTML = ''; b.innerHTML = '';
         questions.forEach((q, i) => {
             const n = i + 1;
-            f.innerHTML += `
-                <label style="color: black;">${n}. ${q}</label>
-                <div class="rating-group">
-                    <label class="rating-option"><input type="radio" name="q${n}" value="Ya" checked onchange="sync()"> Ya</label>
-                    <label class="rating-option"><input type="radio" name="q${n}" value="Tidak" onchange="sync()"> Tidak</label>
-                    <label class="rating-option"><input type="radio" name="q${n}" value="TB" onchange="sync()"> TB</label>
-                </div>
-            `;
-            b.innerHTML += `
-                <tr>
-                    <td style="text-align:center">${n}</td>
-                    <td>${q}</td>
-                    <td id="pv_${n}_ya" style="text-align:center">/</td>
-                    <td id="pv_${n}_tidak" style="text-align:center"></td>
-                    <td id="pv_${n}_tb" style="text-align:center"></td>
-                </tr>
-            `;
+            f.innerHTML += `<label style="color: black;">${n}. ${q}</label><div class="rating-group"><label class="rating-option"><input type="radio" name="q${n}" value="Ya" checked onchange="sync()"> Ya</label><label class="rating-option"><input type="radio" name="q${n}" value="Tidak" onchange="sync()"> Tidak</label><label class="rating-option"><input type="radio" name="q${n}" value="TB" onchange="sync()"> TB</label></div>`;
+            b.innerHTML += `<tr><td style="text-align:center">${n}</td><td>${q}</td><td id="pv_${n}_ya" style="text-align:center">/</td><td id="pv_${n}_tidak" style="text-align:center"></td><td id="pv_${n}_tb" style="text-align:center"></td></tr>`;
         });
     }
 
     async function processAll() {
         const btn = document.getElementById('btnJana');
         const originalText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "Menjana PDF...";
-
+        btn.disabled = true; btn.innerText = "Menjana PDF...";
         const element = document.getElementById('pdf-render');
         const opt = {
-            margin: 0,
-            filename: `Laporan_${document.getElementById('in_program').value || 'SJKC'}.pdf`,
+            margin: 0, filename: `Laporan_${document.getElementById('in_program').value || 'SJKC_CHUNGSAN'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -474,54 +423,34 @@
         try {
             const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
             html2pdf().set(opt).from(element).save();
-
             const settings = JSON.parse(localStorage.getItem('cs_settings') || '{}');
             if(settings.drive_url) {
-                btn.innerText = "Memuat naik ke Drive...";
+                btn.innerText = "Memuat naik...";
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
                     const base64 = reader.result.split(',')[1];
+                    const payload = JSON.stringify({ file: base64, filename: opt.filename });
                     
                     fetch(settings.drive_url, {
                         method: 'POST',
-                        body: JSON.stringify({ file: base64, filename: opt.filename })
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: payload
                     })
                     .then(res => res.json())
                     .then(data => {
-                        if(data.status === "success") {
-                            alert("✅ BERJAYA: Laporan telah disimpan ke Google Drive!");
-                        } else {
-                            alert("❌ GAGAL: Drive merespon dengan ralat: " + (data.message || 'Ralat tidak diketahui'));
-                        }
+                        if(data.status === "success") alert("✅ BERJAYA: Laporan disimpan ke Google Drive!");
+                        else alert("❌ GAGAL: " + data.message);
                     })
-                    .catch(e => {
-                        console.error("Fetch Error:", e);
-                        alert("❌ RALAT RANGKAIAN: Tidak dapat menghubungi Google Apps Script.\n\nSila pastikan:\n1. URL Macro dalam Admin adalah betul.\n2. Script telah di-deploy sebagai 'Anyone'.\n3. Anda mempunyai sambungan internet.");
-                    })
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.innerText = originalText;
-                    });
+                    .catch(e => alert("❌ RALAT: Sila pastikan Google Script di-deploy sebagai 'Anyone'."));
                 }
-            } else {
-                alert("Tetapan URL Drive tidak dijumpai dalam Admin.");
-                btn.disabled = false;
-                btn.innerText = originalText;
             }
-        } catch (error) {
-            console.error(error);
-            alert("Ralat semasa menjana PDF.");
-            btn.disabled = false;
-            btn.innerText = originalText;
-        }
+        } catch (error) { alert("Ralat semasa menjana PDF."); }
+        btn.disabled = false; btn.innerText = originalText;
     }
 
-    window.onload = () => {
-        loadSettings();
-        initQuestions();
-    };
+    window.onload = () => { loadSettings(); initQuestions(); sync(); };
 </script>
-
 </body>
 </html>
