@@ -317,7 +317,6 @@
 
     function loadSettings() {
         const raw = localStorage.getItem('cs_settings');
-        // URL Baharu dikemaskini di sini
         const def = {
             drive_url: "https://script.google.com/macros/s/AKfycbybce1FDGtzLQGrdkxX0rPUzNitJ2Z2CjSChhbkDy6UguWuviiig6IjYctkf5DOEp-1/exec",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
@@ -342,7 +341,7 @@
         if(!url) return alert("Sila masukkan URL Macro dahulu.");
         try {
             await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
-            alert("⚠️ Sambungan dikesan.\n\nJika anda masih mendapat RALAT RANGKAIAN, ini bermakna akaun MOE menyekat akses Public (Anyone).\n\nSOLUSI: Sila gunakan akaun Gmail PERIBADI (@gmail.com) untuk membuat Google Apps Script tersebut.");
+            alert("⚠️ Cubaan Uji Sambungan Dihantar.\n\nJika anda masih mendapat RALAT RANGKAIAN semasa upload, sila pastikan anda menekan butang 'Authorize Access' di Google Apps Script dan klik 'Advanced' -> 'Go to... (unsafe)'.");
         } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
     }
 
@@ -446,6 +445,8 @@
                     const base64 = reader.result.split(',')[1];
                     const payload = JSON.stringify({ file: base64, filename: opt.filename });
                     
+                    // Menggunakan teknik 'Simple Request' dengan text/plain 
+                    // bagi mengelakkan sekatan CORS/Pre-flight pelayar
                     fetch(settings.drive_url, {
                         method: 'POST',
                         mode: 'cors',
@@ -459,7 +460,7 @@
                     })
                     .catch(e => {
                         console.error("Fetch error:", e);
-                        alert("❌ RALAT RANGKAIAN: Tidak dapat menghubungi Google Script.\n\nSila gunakan akaun GMAIL PERIBADI jika akaun MOE menyekat akses.");
+                        alert("❌ RALAT RANGKAIAN: Masih tidak dapat menghubungi Google Drive.\n\nSila pastikan anda telah menekan butang 'Authorize Access' semasa Deploy di Google Script.");
                     });
                 }
             }
