@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SJK(C) CHUNG SAN - Instrumen Pemantauan</title>
-    <!-- PDF Generation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -26,13 +25,7 @@
             flex-direction: column;
         }
 
-        /* Responsive Container */
-        .app-container { 
-            display: flex; 
-            width: 100%; 
-            height: 100%; 
-            flex-direction: row; 
-        }
+        .app-container { display: flex; width: 100%; height: 100%; flex-direction: row; }
 
         @media (max-width: 768px) {
             body { overflow: auto; }
@@ -41,97 +34,31 @@
             .preview-side { padding: 20px 10px !important; }
         }
 
-        /* Admin Button Overlay */
         .admin-trigger {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 100;
-            background: var(--admin-color);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            position: absolute; top: 15px; right: 15px; z-index: 100;
+            background: var(--admin-color); color: white; border: none;
+            padding: 10px 18px; border-radius: 25px; cursor: pointer;
+            font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        /* Admin Modal */
         #admin-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 15px;
         }
         .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 650px;
-            max-height: 90vh;
-            overflow-y: auto;
-            color: #333;
+            background: white; padding: 25px; border-radius: 12px; width: 100%;
+            max-width: 650px; max-height: 90vh; overflow-y: auto; color: #333;
         }
 
-        /* Form Side */
-        .form-side {
-            width: 35%;
-            background: white;
-            padding: 20px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            overflow-y: auto;
-        }
+        .form-side { width: 35%; background: white; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto; }
+        .preview-side { width: 65%; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
 
-        /* Preview Side */
-        .preview-side {
-            width: 65%;
-            background: #525659;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            overflow-y: auto;
-        }
-
-        .section-header {
-            background: var(--primary-color);
-            color: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin: 25px 0 10px 0;
-            font-size: 14px;
-            font-weight: bold;
-        }
+        .section-header { background: var(--primary-color); color: white; padding: 12px; border-radius: 6px; margin: 25px 0 10px 0; font-size: 14px; font-weight: bold; }
 
         label { display: block; margin-top: 15px; font-weight: 600; font-size: 14px; color: #34495e; }
-        input, select, textarea { 
-            width: 100%; 
-            padding: 10px; 
-            margin-top: 6px; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
-            box-sizing: border-box; 
-            font-size: 16px; 
-        }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
         
-        .staff-checklist {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-            background: #f9f9f9;
-            padding: 12px;
-            border-radius: 6px;
-            max-height: 250px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-        }
+        .staff-checklist { display: grid; grid-template-columns: 1fr; gap: 8px; background: #f9f9f9; padding: 12px; border-radius: 6px; max-height: 250px; overflow-y: auto; border: 1px solid #eee; }
         .staff-item { font-size: 13px; display: flex; align-items: center; gap: 10px; padding: 5px 0; color: black; cursor: pointer; }
         .staff-item input { width: 20px; height: 20px; margin: 0; }
 
@@ -139,25 +66,10 @@
         .rating-option { display: flex; align-items: center; font-size: 13px; cursor: pointer; color: black; gap: 5px; }
         .rating-option input { width: 18px; height: 18px; margin: 0; }
 
-        /* PDF Styles */
-        #pdf-render { 
-            background: white; 
-            width: 210mm; 
-            min-width: 210mm; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            transform-origin: top center;
-        }
+        #pdf-render { background: white; width: 210mm; min-width: 210mm; box-shadow: 0 0 20px rgba(0,0,0,0.5); transform-origin: top center; }
 
-        /* Scale PDF for Mobile */
-        @media (max-width: 800px) {
-            #pdf-render {
-                transform: scale(0.45); 
-                margin-bottom: -150mm; 
-            }
-        }
-        @media (max-width: 500px) {
-            #pdf-render { transform: scale(0.38); margin-bottom: -180mm; }
-        }
+        @media (max-width: 800px) { #pdf-render { transform: scale(0.45); margin-bottom: -150mm; } }
+        @media (max-width: 500px) { #pdf-render { transform: scale(0.38); margin-bottom: -180mm; } }
 
         .pdf-page { background: white; width: 210mm; min-height: 297mm; padding: 15mm; box-sizing: border-box; position: relative; color: black; }
         .school-logo-container { text-align: center; margin-bottom: 5px; }
@@ -174,56 +86,37 @@
         .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
 
         .signature-box { text-align: center; width: 180px; position: relative; }
-        .signature-img { height: 55px; width: auto; display: block; margin: 0 auto; margin-bottom: -8px; }
+        .signature-img { height: 65px; width: auto; display: block; margin: 0 auto; margin-bottom: -15px; }
         .signature-line { border-bottom: 1px solid black; min-height: 15px; margin-bottom: 5px; margin-top: 25px;}
         .prepared-by-name { font-weight: bold; margin-bottom: 5px; font-size: 12px;}
 
         .action-bar { position: sticky; bottom: 0; background: white; padding: 15px 0; border-top: 1px solid #eee; z-index: 50; }
         .btn-main { background: var(--success-color); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-main:active { transform: translateY(2px); box-shadow: none; }
         
         .small-btn { font-size: 11px; background: #ddd; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 8px; font-weight: 600; }
         
         .admin-section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
-        .admin-section h4 { margin: 0 0 10px 0; color: var(--primary-color); }
     </style>
 </head>
 <body>
 
 <button class="admin-trigger" onclick="checkAdminPassword()">⚙️ TETAPAN</button>
 
-<!-- ADMIN MODAL -->
 <div id="admin-modal">
     <div class="modal-content">
         <h3 style="color: black; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Tetapan Pentadbir</h3>
-        
         <div class="admin-section">
-            <h4>1. Integrasi & Logo</h4>
+            <h4>1. Integrasi Google</h4>
             <label>URL Web App (Google Apps Script)</label>
             <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/.../exec">
-            
-            <label>Muat Naik Logo Sekolah (Tengah Atas)</label>
-            <input type="file" id="cfg_logo_file" accept="image/*" onchange="handleLogoUpload(this)">
-            <img id="prev_logo_img" style="height:60px; margin-top:10px; border:1px dashed #ccc; display:none; margin-left: auto; margin-right: auto;">
         </div>
-
         <div class="admin-section">
-            <h4>2. Pengesahan</h4>
-            <label>Tandatangan Pengesah (Guru Besar / Pentadbir)</label>
-            <input type="file" id="cfg_sign_g" accept="image/*" onchange="handleSignatureUpload(this)">
-            <img id="prev_sign_g" style="height:50px; margin-top:10px; border:1px dashed #ccc; display:none;">
-            <p style="font-size: 11px; color: #666; margin-top: 4px;">Tandatangan ini akan dipaparkan secara automatik dalam PDF.</p>
-        </div>
-
-        <div class="admin-section">
-            <h4>3. Senarai Nama</h4>
+            <h4>2. Senarai Nama</h4>
             <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
             <textarea id="cfg_pemantau" rows="3"></textarea>
-
             <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
             <textarea id="cfg_staf" rows="5"></textarea>
         </div>
-
         <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button class="btn-main" style="background:var(--primary-color)" onclick="saveSettings()">Simpan Tetapan</button>
             <button class="btn-main" style="background:#95a5a6" onclick="toggleAdmin(false)">Tutup</button>
@@ -232,13 +125,11 @@
 </div>
 
 <div class="app-container">
-    <!-- FORM SIDE -->
     <div class="form-side">
         <h2 style="margin-top:0; color:var(--primary-color); font-size: 1.4rem; text-align: center;">SJK(C) CHUNG SAN</h2>
-        <p style="text-align: center; font-size: 12px; color: #666; margin-bottom: 20px;">Instrumen Pemantauan Digital</p>
         
         <label>Nama Program / Aktiviti</label>
-        <input type="text" id="in_program" oninput="sync()" placeholder="Contoh: Kejohanan Sukan Tahunan">
+        <input type="text" id="in_program" oninput="sync()" placeholder="Masukkan nama program">
 
         <div style="display:flex; gap:10px">
             <div style="flex:1">
@@ -267,10 +158,8 @@
         <div class="section-header">Laporan Ringkas</div>
         <label>Kekuatan</label>
         <textarea id="in_kekuatan" oninput="sync()" rows="2"></textarea>
-        
         <label>Kelemahan</label>
         <textarea id="in_kelemahan" oninput="sync()" rows="2"></textarea>
-
         <label>Cadangan Penambahbaikan</label>
         <textarea id="in_cadangan" oninput="sync()" rows="2"></textarea>
 
@@ -286,16 +175,11 @@
         </div>
     </div>
 
-    <!-- PREVIEW SIDE -->
     <div class="preview-side">
-        <div style="color: white; margin-bottom: 10px; font-size: 13px; text-align: center;">
-            [ Pratinjau Dokumen PDF ]
-        </div>
         <div id="pdf-render">
-            <!-- Halaman 1 -->
             <div class="pdf-page">
                 <div class="school-logo-container">
-                    <img id="pv_logo" class="school-logo-img" src="" style="display:none;">
+                    <img id="pv_logo" class="school-logo-img" src="LOGO SEKOLAH.PNG.png">
                 </div>
                 <div class="school-header">
                     <div class="school-name">SJK(C) CHUNG SAN</div>
@@ -320,13 +204,7 @@
 
                 <table id="pv_table">
                     <thead>
-                        <tr>
-                            <th width="5%">BIL</th>
-                            <th>ELEMEN PEMANTAUAN</th>
-                            <th width="10%">YA</th>
-                            <th width="10%">TIDAK</th>
-                            <th width="10%">TB</th>
-                        </tr>
+                        <tr><th width="5%">BIL</th><th>ELEMEN PEMANTAUAN</th><th width="10%">YA</th><th width="10%">TIDAK</th><th width="10%">TB</th></tr>
                     </thead>
                     <tbody id="pv_body"></tbody>
                 </table>
@@ -354,13 +232,12 @@
                         <div style="font-size: 11px;">Disediakan Oleh</div>
                     </div>
                     <div class="signature-box">
-                        <img id="pv_sign_g" class="signature-img" src="" style="display:none;">
+                        <img id="pv_sign_g" class="signature-img" src="LLA.JPG">
                         <div class="signature-line"></div>
                         <div style="font-size: 11px;">Disahkan Oleh</div>
                     </div>
                 </div>
             </div>
-            <!-- Photo Pages Container -->
             <div id="photo-pages-container"></div>
         </div>
     </div>
@@ -382,50 +259,19 @@
 
     let allPhotos = [];
     let allSelected = false;
-    let logo_data = "";
-    let sign_g = "";
 
     function checkAdminPassword() {
-        const pw = prompt("Masukkan Kata Laluan Admin:");
-        if (pw === "YCC9102") { toggleAdmin(true); } else { alert("Kata Laluan Salah!"); }
+        if (prompt("Masukkan Kata Laluan Admin:") === "YCC9102") toggleAdmin(true);
+        else alert("Kata Laluan Salah!");
     }
 
     function toggleAdmin(show) { document.getElementById('admin-modal').style.display = show ? 'flex' : 'none'; }
 
-    function handleLogoUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                logo_data = e.target.result;
-                document.getElementById('prev_logo_img').src = logo_data;
-                document.getElementById('prev_logo_img').style.display = 'block';
-                document.getElementById('pv_logo').src = logo_data;
-                document.getElementById('pv_logo').style.display = 'inline-block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function handleSignatureUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                sign_g = e.target.result;
-                document.getElementById('prev_sign_g').src = sign_g;
-                document.getElementById('prev_sign_g').style.display = 'block';
-                sync();
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
     function saveSettings() {
         const settings = {
             drive_url: document.getElementById('cfg_drive_url').value,
-            logo_data: logo_data,
             pemantau: document.getElementById('cfg_pemantau').value.split('\n').filter(x => x.trim()),
-            staf: document.getElementById('cfg_staf').value.split('\n').filter(x => x.trim()),
-            sign_g: sign_g
+            staf: document.getElementById('cfg_staf').value.split('\n').filter(x => x.trim())
         };
         localStorage.setItem('cs_v6_settings', JSON.stringify(settings));
         loadSettings();
@@ -437,16 +283,8 @@
         const raw = localStorage.getItem('cs_v6_settings');
         const def = {
             drive_url: "https://script.google.com/macros/s/AKfycbz2C3KnOSx0-28KNW_4Io5TS9-8pUaPqbdJk0DHf2a0XBNdgaTqqFg3-0ExwNXS6hExUg/exec",
-            logo_data: "",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
-            staf: [
-                "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
-                "FONG CUI FUNG", "GOH SU CHING", "KONG ZHE FONG", "LAU YUN HEE", "LING LEE ANN",
-                "ROLAND TING HOCK SING", "SHARMAINE DAPHNE ANAK SLYVESTER BAKAR", "STEPHEN HII YII NAN",
-                "TU HIONG HIONG", "UNICE WONG WEN WEN", "WEE CHUN YANG", "WONG CHUI LING",
-                "YUKI NG JIAJING", "ZAFRULLAH BIN MOHD SABRI"
-            ],
-            sign_g: ""
+            staf: ["CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU", "FONG CUI FUNG", "GOH SU CHING", "KONG ZHE FONG", "LAU YUN HEE", "LING LEE ANN", "ROLAND TING HOCK SING", "SHARMAINE DAPHNE ANAK SLYVESTER BAKAR", "STEPHEN HII YII NAN", "TU HIONG HIONG", "UNICE WONG WEN WEN", "WEE CHUN YANG", "WONG CHUI LING", "YUKI NG JIAJING", "ZAFRULLAH BIN MOHD SABRI"]
         };
         const settings = raw ? JSON.parse(raw) : def;
 
@@ -454,18 +292,6 @@
         document.getElementById('cfg_pemantau').value = settings.pemantau.join('\n');
         document.getElementById('cfg_staf').value = settings.staf.join('\n');
         
-        logo_data = settings.logo_data;
-        sign_g = settings.sign_g;
-
-        if(logo_data) {
-            document.getElementById('prev_logo_img').src = logo_data;
-            document.getElementById('prev_logo_img').style.display = 'block';
-            document.getElementById('pv_logo').src = logo_data;
-            document.getElementById('pv_logo').style.display = 'inline-block';
-        }
-        if(sign_g) { document.getElementById('prev_sign_g').src = sign_g; document.getElementById('prev_sign_g').style.display = 'block'; }
-
-        // Populate Selects
         const selPem = document.getElementById('in_pemantau');
         selPem.innerHTML = '<option value="">-- Pilih Pemantau --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
         
@@ -511,14 +337,14 @@
     function renderPhotoPages() {
         const container = document.getElementById('photo-pages-container');
         container.innerHTML = '';
-        const logoHtml = logo_data ? `<div class="school-logo-container"><img class="school-logo-img" src="${logo_data}"></div>` : '';
+        const logoUrl = "LOGO SEKOLAH.PNG.png";
 
         for (let i = 0; i < allPhotos.length; i += 6) {
             const chunk = allPhotos.slice(i, i + 6);
             const page = document.createElement('div');
             page.className = 'pdf-page';
             page.innerHTML = `
-                ${logoHtml}
+                <div class="school-logo-container"><img class="school-logo-img" src="${logoUrl}"></div>
                 <div class="school-header">
                     <div class="school-name">SJK(C) CHUNG SAN</div>
                     <div style="font-size: 11px; margin-top: 5px;">LAMPIRAN BERGAMBAR (HALAMAN ${Math.floor(i/6)+1})</div>
@@ -553,21 +379,10 @@
         const staff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
         setInnerText('pv_staf', staff.join(', ') || '-');
 
-        // Signature logic - show if exists
-        const signGImg = document.getElementById('pv_sign_g');
-        if (sign_g && signGImg) {
-            signGImg.src = sign_g;
-            signGImg.style.display = 'block';
-        } else if (signGImg) {
-            signGImg.style.display = 'none';
-        }
-
-        // Questions sync
         questions.forEach((_, i) => {
             const n = i + 1;
             const radio = document.querySelector(`input[name="q${n}"]:checked`);
             const v = radio ? radio.value : "Ya";
-            
             setInnerText(`pv_${n}_ya`, (v === 'Ya') ? '/' : '');
             setInnerText(`pv_${n}_tidak`, (v === 'Tidak') ? '/' : '');
             setInnerText(`pv_${n}_tb`, (v === 'TB') ? '/' : '');
@@ -576,7 +391,6 @@
 
     function initQuestions() {
         const f = document.getElementById('questions-form'), b = document.getElementById('pv_body');
-        if(!f || !b) return;
         f.innerHTML = ''; b.innerHTML = '';
         questions.forEach((q, i) => {
             const n = i + 1;
@@ -588,29 +402,18 @@
                     <label class="rating-option"><input type="radio" name="q${n}" value="TB" onchange="sync()"> TB</label>
                 </div>
             `;
-            b.innerHTML += `
-                <tr>
-                    <td style="text-align:center">${n}</td>
-                    <td>${q}</td>
-                    <td id="pv_${n}_ya" style="text-align:center">/</td>
-                    <td id="pv_${n}_tidak" style="text-align:center"></td>
-                    <td id="pv_${n}_tb" style="text-align:center"></td>
-                </tr>
-            `;
+            b.innerHTML += `<tr><td style="text-align:center">${n}</td><td>${q}</td><td id="pv_${n}_ya" style="text-align:center">/</td><td id="pv_${n}_tidak" style="text-align:center"></td><td id="pv_${n}_tb" style="text-align:center"></td></tr>`;
         });
     }
 
     async function processAll() {
         const btn = document.getElementById('btnJana');
-        const originalText = btn.innerText;
-        btn.disabled = true; btn.innerText = "Menjana PDF...";
+        btn.disabled = true; btn.innerText = "Sedang Memproses...";
         const element = document.getElementById('pdf-render');
-        
         const opt = {
-            margin: 0, 
-            filename: `Laporan_Pemantauan_${document.getElementById('in_program').value || 'SJKC_CHUNGSAN'}.pdf`,
+            margin: 0, filename: `Laporan_${document.getElementById('in_program').value || 'SJKC'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
@@ -618,32 +421,23 @@
             const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
             html2pdf().set(opt).from(element).save();
             const settings = JSON.parse(localStorage.getItem('cs_v6_settings') || '{}');
-            
             if(settings.drive_url) {
-                btn.innerText = "Memuat naik...";
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
                     const base64 = reader.result.split(',')[1];
                     fetch(settings.drive_url, {
-                        method: 'POST',
-                        mode: 'no-cors',
+                        method: 'POST', mode: 'no-cors',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ file: base64, filename: opt.filename })
-                    })
-                    .then(() => alert("✅ PROSES SELESAI: Fail telah dijana dan dimuat naik ke Drive!"))
-                    .catch(e => alert("❌ Ralat sambungan semasa muat naik."));
+                    }).then(() => alert("✅ SELESAI: PDF telah dijana dan dimuat naik!"));
                 }
             }
-        } catch (error) { alert("❌ Ralat semasa menjana PDF."); }
-        btn.disabled = false; btn.innerText = originalText;
+        } catch (error) { alert("❌ Ralat penjanaan."); }
+        btn.disabled = false; btn.innerText = "JANA PDF & UPLOAD";
     }
 
-    window.onload = () => { 
-        initQuestions(); // Generate questions DOM first
-        loadSettings();  // Then load user data
-        sync();          // Finally sync the preview
-    };
+    window.onload = () => { initQuestions(); loadSettings(); sync(); };
 </script>
 </body>
 </html>
