@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SJK(C) CHUNG SAN - Instrumen Pemantauan</title>
+    <!-- PDF Generation Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
@@ -11,7 +12,6 @@
             --success-color: #27ae60;
             --bg-color: #f4f7f6;
             --admin-color: #e67e22;
-            --danger-color: #e74c3c;
         }
 
         body {
@@ -94,8 +94,6 @@
         .btn-main { background: var(--success-color); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
         .small-btn { font-size: 11px; background: #ddd; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 8px; font-weight: 600; }
-        
-        .admin-section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -106,12 +104,10 @@
     <div class="modal-content">
         <h3 style="color: black; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Tetapan Pentadbir</h3>
         <div class="admin-section">
-            <h4>1. Integrasi Google</h4>
-            <label>URL Web App (Google Apps Script)</label>
+            <label>URL Web App (Google Drive Upload)</label>
             <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
         <div class="admin-section">
-            <h4>2. Senarai Nama</h4>
             <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
             <textarea id="cfg_pemantau" rows="3"></textarea>
             <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
@@ -133,17 +129,25 @@
 
         <div style="display:flex; gap:10px">
             <div style="flex:1">
-                <label>Tarikh</label>
+                <label>Tarikh Pelaksanaan</label>
                 <input type="date" id="in_tarikh" oninput="handleDateChange()">
             </div>
             <div style="flex:1">
-                <label>Hari (Auto)</label>
+                <label>Hari Pelaksanaan (Auto)</label>
                 <input type="text" id="in_hari" readonly style="background:#f9f9f9">
             </div>
         </div>
 
-        <label>Masa</label>
-        <input type="time" id="in_masa" oninput="sync()">
+        <div style="display:flex; gap:10px; align-items: flex-end;">
+            <div style="flex:1">
+                <label>Masa Mula</label>
+                <input type="time" id="in_masa_mula" oninput="sync()">
+            </div>
+            <div style="flex:1">
+                <label>Masa Tamat</label>
+                <input type="time" id="in_masa_tamat" oninput="sync()">
+            </div>
+        </div>
 
         <label>Pemantau</label>
         <select id="in_pemantau" onchange="sync()"></select>
@@ -167,11 +171,11 @@
         <label>Disediakan Oleh</label>
         <select id="in_prepared_by" onchange="sync()"></select>
 
-        <label>Muat Naik Gambar Laporan (Maks: 12)</label>
+        <label>Muat Naik Gambar Laporan</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
 
         <div class="action-bar">
-            <button class="btn-main" id="btnJana" onclick="processAll()">JANA PDF & UPLOAD</button>
+            <button class="btn-main" id="btnJana" onclick="processAll()">JANA PDF & MUAT NAIK</button>
         </div>
     </div>
 
@@ -179,7 +183,8 @@
         <div id="pdf-render">
             <div class="pdf-page">
                 <div class="school-logo-container">
-                    <img id="pv_logo" class="school-logo-img" src="LOGO SEKOLAH.PNG.png">
+                    <!-- Menggunakan URL Encode untuk mengendalikan ruang dalam nama fail -->
+                    <img id="pv_logo" class="school-logo-img" src="LOGO%20SEKOLAH.PNG.png" onerror="this.style.opacity='0'" crossorigin="anonymous">
                 </div>
                 <div class="school-header">
                     <div class="school-name">SJK(C) CHUNG SAN</div>
@@ -189,11 +194,11 @@
                 <table>
                     <tr><th width="20%">PROGRAM</th><td colspan="3" id="pv_program">-</td></tr>
                     <tr>
-                        <th width="20%">TARIKH</th><td id="pv_tarikh">-</td>
-                        <th width="20%">HARI</th><td id="pv_hari">-</td>
+                        <th width="20%">TARIKH PELAKSANAAN</th><td id="pv_tarikh">-</td>
+                        <th width="20%">HARI PELAKSANAAN</th><td id="pv_hari">-</td>
                     </tr>
                     <tr>
-                        <th>MASA</th><td id="pv_masa">-</td>
+                        <th>MASA PELAKSANAAN</th><td id="pv_masa">-</td>
                         <th>PEMANTAU</th><td id="pv_pemantau">-</td>
                     </tr>
                     <tr>
@@ -232,7 +237,7 @@
                         <div style="font-size: 11px;">Disediakan Oleh</div>
                     </div>
                     <div class="signature-box">
-                        <img id="pv_sign_g" class="signature-img" src="LLA.JPG">
+                        <img id="pv_sign_g" class="signature-img" src="LLA.JPG" onerror="this.style.opacity='0'" crossorigin="anonymous">
                         <div class="signature-line"></div>
                         <div style="font-size: 11px;">Disahkan Oleh</div>
                     </div>
@@ -337,14 +342,14 @@
     function renderPhotoPages() {
         const container = document.getElementById('photo-pages-container');
         container.innerHTML = '';
-        const logoUrl = "LOGO SEKOLAH.PNG.png";
+        const logoUrl = "LOGO%20SEKOLAH.PNG.png";
 
         for (let i = 0; i < allPhotos.length; i += 6) {
             const chunk = allPhotos.slice(i, i + 6);
             const page = document.createElement('div');
             page.className = 'pdf-page';
             page.innerHTML = `
-                <div class="school-logo-container"><img class="school-logo-img" src="${logoUrl}"></div>
+                <div class="school-logo-container"><img class="school-logo-img" src="${logoUrl}" onerror="this.style.opacity='0'" crossorigin="anonymous"></div>
                 <div class="school-header">
                     <div class="school-name">SJK(C) CHUNG SAN</div>
                     <div style="font-size: 11px; margin-top: 5px;">LAMPIRAN BERGAMBAR (HALAMAN ${Math.floor(i/6)+1})</div>
@@ -363,18 +368,22 @@
     }
 
     function sync() {
-        const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value || '-' : '-';
-        const setInnerText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+        const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value || '' : '';
+        const setInnerText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val || '-'; };
 
         setInnerText('pv_program', getVal('in_program'));
         setInnerText('pv_tarikh', getVal('in_tarikh'));
         setInnerText('pv_hari', getVal('in_hari'));
-        setInnerText('pv_masa', getVal('in_masa'));
         setInnerText('pv_pemantau', getVal('in_pemantau'));
         setInnerText('pv_kekuatan', getVal('in_kekuatan'));
         setInnerText('pv_kelemahan', getVal('in_kelemahan'));
         setInnerText('pv_cadangan', getVal('in_cadangan'));
         setInnerText('pv_prepared_name', getVal('in_prepared_by'));
+
+        const mula = getVal('in_masa_mula');
+        const tamat = getVal('in_masa_tamat');
+        const displayTime = (mula && tamat) ? `${mula} - ${tamat}` : (mula || tamat || '-');
+        setInnerText('pv_masa', displayTime);
 
         const staff = Array.from(document.querySelectorAll('input[name="staf_check"]:checked')).map(c => c.value);
         setInnerText('pv_staf', staff.join(', ') || '-');
@@ -408,20 +417,30 @@
 
     async function processAll() {
         const btn = document.getElementById('btnJana');
-        btn.disabled = true; btn.innerText = "Sedang Memproses...";
+        const originalText = btn.innerText;
+        btn.disabled = true; btn.innerText = "Memproses...";
+        
         const element = document.getElementById('pdf-render');
         const opt = {
-            margin: 0, filename: `Laporan_${document.getElementById('in_program').value || 'SJKC'}.pdf`,
+            margin: 0, 
+            filename: `Laporan_${document.getElementById('in_program').value || 'SJKC'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true,
+                allowTaint: true,
+                logging: false
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         try {
             const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
             html2pdf().set(opt).from(element).save();
+            
             const settings = JSON.parse(localStorage.getItem('cs_v6_settings') || '{}');
             if(settings.drive_url) {
+                btn.innerText = "Memuat naik...";
                 const reader = new FileReader();
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
@@ -430,11 +449,16 @@
                         method: 'POST', mode: 'no-cors',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ file: base64, filename: opt.filename })
-                    }).then(() => alert("✅ SELESAI: PDF telah dijana dan dimuat naik!"));
+                    })
+                    .then(() => alert("✅ SELESAI: PDF dijana dan dimuat naik ke Drive!"))
+                    .catch(() => alert("❌ Gagal memuat naik ke Drive."));
                 }
             }
-        } catch (error) { alert("❌ Ralat penjanaan."); }
-        btn.disabled = false; btn.innerText = "JANA PDF & UPLOAD";
+        } catch (error) { 
+            console.error(error);
+            alert("❌ Ralat penjanaan PDF."); 
+        }
+        btn.disabled = false; btn.innerText = originalText;
     }
 
     window.onload = () => { initQuestions(); loadSettings(); sync(); };
