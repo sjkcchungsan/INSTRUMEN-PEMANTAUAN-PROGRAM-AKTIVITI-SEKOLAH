@@ -58,9 +58,10 @@
             padding: 25px;
             border-radius: 12px;
             width: 80%;
-            max-width: 600px;
-            max-height: 80vh;
+            max-width: 650px;
+            max-height: 85vh;
             overflow-y: auto;
+            color: #333;
         }
 
         /* Form Side */
@@ -116,22 +117,33 @@
         /* PDF Styles */
         #pdf-render { background: #525659; width: 210mm; box-sizing: border-box; }
         .pdf-page { background: white; width: 210mm; min-height: 297mm; padding: 15mm; box-sizing: border-box; margin-bottom: 20px; position: relative; color: black; }
+        
+        .school-logo-container { text-align: center; margin-bottom: 10px; }
+        .school-logo-img { height: 60px; width: auto; object-fit: contain; }
+
         .school-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
         .school-name { font-size: 18px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid black; padding: 5px; font-size: 10px; text-align: left; color: black; }
         th { background-color: #f2f2f2; text-align: center; }
 
-        /* Photo Grid (2 cols x 3 rows = 6 max) */
+        /* Photo Grid */
         .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .photo-item { border: 1px solid #ccc; padding: 5px; text-align: center; height: 75mm; display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .photo-item img { max-width: 100%; max-height: 65mm; object-fit: contain; }
+
+        .signature-box { text-align: center; width: 150px; position: relative; }
+        .signature-img { height: 40px; width: auto; display: block; margin: 0 auto; margin-bottom: -5px; }
+        .signature-line { border-bottom: 1px solid black; height: 10px; margin-bottom: 5px; }
 
         .action-bar { position: sticky; bottom: 0; background: white; padding: 15px 0; border-top: 1px solid #eee; }
         .btn-main { background: var(--success-color); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-test { background: #3498db; margin-bottom: 10px; padding: 5px 10px; font-size: 11px; width: auto; }
         
         .small-btn { font-size: 10px; background: #ddd; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-bottom: 5px; }
+        
+        .admin-section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+        .admin-section h4 { margin: 0 0 10px 0; color: var(--primary-color); }
     </style>
 </head>
 <body>
@@ -141,19 +153,44 @@
 <!-- ADMIN MODAL -->
 <div id="admin-modal">
     <div class="modal-content">
-        <h3 style="color: black;">Tetapan Admin</h3>
+        <h3 style="color: black; margin-top: 0;">Tetapan Admin</h3>
         
-        <label>URL Google Drive (Web App URL)</label>
-        <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/.../exec">
-        <button class="btn-main btn-test" onclick="testConnection()">Uji Sambungan</button>
-        
-        <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
-        <textarea id="cfg_pemantau" rows="4"></textarea>
+        <div class="admin-section">
+            <h4>Integrasi & Identiti</h4>
+            <label>URL Google Drive (Web App URL)</label>
+            <input type="text" id="cfg_drive_url" placeholder="https://script.google.com/macros/s/.../exec">
+            
+            <label>URL Logo Sekolah (Link GitHub)</label>
+            <input type="text" id="cfg_logo_url" oninput="updateLogoPreview()" placeholder="Sila masukkan link logo dari github">
+            <div style="margin-top:5px; font-size:10px; color:#666;">Contoh: https://raw.githubusercontent.com/user/repo/main/LOGO_SEKOLAH.png</div>
+        </div>
 
-        <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
-        <textarea id="cfg_staf" rows="10"></textarea>
+        <div class="admin-section">
+            <h4>Senarai Data</h4>
+            <label>Senarai Pemantau (Asingkan dengan baris baru)</label>
+            <textarea id="cfg_pemantau" rows="3"></textarea>
 
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <label>Senarai Staf Terlibat (Asingkan dengan baris baru)</label>
+            <textarea id="cfg_staf" rows="5"></textarea>
+        </div>
+
+        <div class="admin-section">
+            <h4>Tandatangan Rasmi</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Tandatangan Pemantau</label>
+                    <input type="file" id="cfg_sign_p" accept="image/*" onchange="handleSignatureUpload(this, 'sign_p')">
+                    <img id="prev_sign_p" style="height:40px; margin-top:5px; border:1px dashed #ccc; display:none;">
+                </div>
+                <div>
+                    <label>Tandatangan Pengesah</label>
+                    <input type="file" id="cfg_sign_g" accept="image/*" onchange="handleSignatureUpload(this, 'sign_g')">
+                    <img id="prev_sign_g" style="height:40px; margin-top:5px; border:1px dashed #ccc; display:none;">
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
             <button class="btn-main" style="background:var(--primary-color)" onclick="saveSettings()">Simpan Tetapan</button>
             <button class="btn-main" style="background:#95a5a6" onclick="toggleAdmin(false)">Tutup</button>
         </div>
@@ -201,7 +238,7 @@
         <label>Cadangan Penambahbaikan</label>
         <textarea id="in_cadangan" oninput="sync()" rows="2"></textarea>
 
-        <label>Muat Naik Gambar (6 keping setiap halaman)</label>
+        <label>Muat Naik Gambar (Laporan)</label>
         <input type="file" id="in_photos" accept="image/*" multiple onchange="handlePhotos(this)">
 
         <div class="action-bar">
@@ -213,6 +250,9 @@
         <div id="pdf-render">
             <!-- Halaman 1: Laporan Utama -->
             <div class="pdf-page">
+                <div class="school-logo-container">
+                    <img id="pv_logo" class="school-logo-img" src="" style="display:none;">
+                </div>
                 <div class="school-header">
                     <div class="school-name">SJK(C) CHUNG SAN</div>
                     <div class="doc-title">INSTRUMEN PEMANTAUAN PROGRAM / AKTIVITI SEKOLAH</div>
@@ -263,14 +303,16 @@
                     <div id="pv_cadangan" style="font-size:9px; border:1px solid #ddd; min-height:30px; padding:3px;">-</div>
                 </div>
 
-                <div style="margin-top: 30px; display: flex; justify-content: space-between;">
-                    <div style="text-align: center; width: 150px;">
-                        <div style="border-bottom: 1px solid black; height: 30px;"></div>
-                        <div style="font-size: 10px; margin-top: 5px;">Tandatangan Pemantau</div>
+                <div style="margin-top: 25px; display: flex; justify-content: space-between;">
+                    <div class="signature-box">
+                        <img id="pv_sign_p" class="signature-img" src="" style="display:none;">
+                        <div class="signature-line"></div>
+                        <div style="font-size: 10px;">Tandatangan Pemantau</div>
                     </div>
-                    <div style="text-align: center; width: 150px;">
-                        <div style="border-bottom: 1px solid black; height: 30px;"></div>
-                        <div style="font-size: 10px; margin-top: 5px;">Disahkan Oleh</div>
+                    <div class="signature-box">
+                        <img id="pv_sign_g" class="signature-img" src="" style="display:none;">
+                        <div class="signature-line"></div>
+                        <div style="font-size: 10px;">Disahkan Oleh</div>
                     </div>
                 </div>
             </div>
@@ -295,8 +337,9 @@
 
     let allPhotos = [];
     let allSelected = false;
+    let sign_p = "";
+    let sign_g = "";
 
-    // --- ADMIN ACCESS ---
     function checkAdminPassword() {
         const pw = prompt("Masukkan Kata Laluan Admin:");
         if (pw === "YCC9102") { toggleAdmin(true); } else { alert("Kata Laluan Salah!"); }
@@ -304,52 +347,86 @@
 
     function toggleAdmin(show) { document.getElementById('admin-modal').style.display = show ? 'flex' : 'none'; }
 
+    function handleSignatureUpload(input, type) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if(type === 'sign_p') sign_p = e.target.result;
+                else sign_g = e.target.result;
+                updateSignaturePreviews();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function updateSignaturePreviews() {
+        if(sign_p) {
+            document.getElementById('prev_sign_p').src = sign_p;
+            document.getElementById('prev_sign_p').style.display = 'block';
+            document.getElementById('pv_sign_p').src = sign_p;
+            document.getElementById('pv_sign_p').style.display = 'block';
+        }
+        if(sign_g) {
+            document.getElementById('prev_sign_g').src = sign_g;
+            document.getElementById('prev_sign_g').style.display = 'block';
+            document.getElementById('pv_sign_g').src = sign_g;
+            document.getElementById('pv_sign_g').style.display = 'block';
+        }
+    }
+
+    function updateLogoPreview() {
+        const url = document.getElementById('cfg_logo_url').value;
+        const pvLogo = document.getElementById('pv_logo');
+        if(url) {
+            pvLogo.src = url;
+            pvLogo.style.display = 'inline-block';
+        } else {
+            pvLogo.style.display = 'none';
+        }
+    }
+
     function saveSettings() {
         const settings = {
             drive_url: document.getElementById('cfg_drive_url').value,
+            logo_url: document.getElementById('cfg_logo_url').value,
             pemantau: document.getElementById('cfg_pemantau').value.split('\n').filter(x => x.trim()),
-            staf: document.getElementById('cfg_staf').value.split('\n').filter(x => x.trim())
+            staf: document.getElementById('cfg_staf').value.split('\n').filter(x => x.trim()),
+            sign_p: sign_p,
+            sign_g: sign_g
         };
-        localStorage.setItem('cs_settings', JSON.stringify(settings));
+        localStorage.setItem('cs_settings_v2', JSON.stringify(settings));
         loadSettings();
         toggleAdmin(false);
         alert("Tetapan Disimpan!");
     }
 
     function loadSettings() {
-        const raw = localStorage.getItem('cs_settings');
-        // URL Baharu dikemaskini di sini
+        const raw = localStorage.getItem('cs_settings_v2');
         const def = {
             drive_url: "https://script.google.com/macros/s/AKfycbz2C3KnOSx0-28KNW_4Io5TS9-8pUaPqbdJk0DHf2a0XBNdgaTqqFg3-0ExwNXS6hExUg/exec",
+            logo_url: "",
             pemantau: ["YAP MOON SEE", "KONG ZHE FONG", "FONG CUI FUNG", "JULIANA YEK SUK KONG"],
-            staf: [
-                "CLAUDIA MO ONG YI", "CYNTHIA TING XING ROU", "EVY LAW JIA JIA", "FLORENCE WONG ZHI YU",
-                "FONG CUI FUNG", "GOH SU CHING", "KONG ZHE FONG", "LAU YUN HEE", "LING LEE ANN",
-                "ROLAND TING HOCK SING", "SHARMAINE DAPHNE ANAK SLYVESTER BAKAR", "STEPHEN HII YII NAN",
-                "TU HIONG HIONG", "UNICE WONG WEN WEN", "WEE CHUN YANG", "WONG CHUI LING",
-                "YUKI NG JIAJING", "ZAFRULLAH BIN MOHD SABRI"
-            ]
+            staf: ["YAP MOON SEE", "KONG ZHE FONG", "CHIEW JOO ING", "CLAUDIA MO ONG YI", "LAU YUN HEE", "ROLAND TING HOCK SING"],
+            sign_p: "",
+            sign_g: ""
         };
         const settings = raw ? JSON.parse(raw) : def;
 
         document.getElementById('cfg_drive_url').value = settings.drive_url;
+        document.getElementById('cfg_logo_url').value = settings.logo_url;
         document.getElementById('cfg_pemantau').value = settings.pemantau.join('\n');
         document.getElementById('cfg_staf').value = settings.staf.join('\n');
+        sign_p = settings.sign_p;
+        sign_g = settings.sign_g;
+
+        updateLogoPreview();
+        updateSignaturePreviews();
 
         const sel = document.getElementById('in_pemantau');
         sel.innerHTML = '<option value="">-- Pilih --</option>' + settings.pemantau.map(p => `<option value="${p}">${p}</option>`).join('');
         
         const checkArea = document.getElementById('staf_checks');
         checkArea.innerHTML = settings.staf.map(s => `<label class="staff-item"><input type="checkbox" name="staf_check" value="${s}" onchange="sync()"> ${s}</label>`).join('');
-    }
-
-    async function testConnection() {
-        const url = document.getElementById('cfg_drive_url').value;
-        if(!url) return alert("Sila masukkan URL Macro dahulu.");
-        try {
-            await fetch(url, { method: 'POST', body: 'ping', mode: 'no-cors' });
-            alert("⚠️ Ujian sambungan dihantar.\n\nJika anda masih mendapat RALAT RANGKAIAN semasa upload, pastikan anda menekan butang 'Authorize Access' di Google Apps Script dan klik 'Advanced' -> 'Go to... (unsafe)'.");
-        } catch (e) { alert("Ralat: Tidak dapat menghubungi URL tersebut."); }
     }
 
     function toggleSelectAllStaff() {
@@ -387,11 +464,15 @@
     function renderPhotoPages() {
         const container = document.getElementById('photo-pages-container');
         container.innerHTML = '';
+        const logoUrl = document.getElementById('cfg_logo_url').value;
+        const logoHtml = logoUrl ? `<div class="school-logo-container"><img class="school-logo-img" src="${logoUrl}"></div>` : '';
+
         for (let i = 0; i < allPhotos.length; i += 6) {
             const chunk = allPhotos.slice(i, i + 6);
             const page = document.createElement('div');
             page.className = 'pdf-page';
             page.innerHTML = `
+                ${logoHtml}
                 <div class="school-header">
                     <div class="school-name">SJK(C) CHUNG SAN</div>
                     <div class="doc-title">LAMPIRAN BERGAMBAR (HALAMAN ${Math.floor(i/6)+1})</div>
@@ -462,18 +543,19 @@
         const originalText = btn.innerText;
         btn.disabled = true; btn.innerText = "Menjana PDF...";
         const element = document.getElementById('pdf-render');
+        
         const opt = {
             margin: 0, 
             filename: `Laporan_${document.getElementById('in_program').value || 'SJKC_CHUNGSAN'}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: { scale: 2, useCORS: true, allowTaint: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         try {
             const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
             html2pdf().set(opt).from(element).save();
-            const settings = JSON.parse(localStorage.getItem('cs_settings') || '{}');
+            const settings = JSON.parse(localStorage.getItem('cs_settings_v2') || '{}');
             
             if(settings.drive_url) {
                 btn.innerText = "Memuat naik...";
@@ -481,36 +563,18 @@
                 reader.readAsDataURL(pdfBlob);
                 reader.onloadend = function() {
                     const base64 = reader.result.split(',')[1];
-                    
                     fetch(settings.drive_url, {
                         method: 'POST',
-                        mode: 'no-cors', 
-                        headers: {
-                            'Content-Type': 'text/plain;charset=utf-8',
-                        },
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ file: base64, filename: opt.filename })
                     })
-                    .then(() => {
-                        alert("Proses muat naik selesai! Sila semak Google Drive anda.");
-                    })
-                    .catch(e => {
-                        console.error(e);
-                        alert("Ralat sambungan ke Drive. Sila pastikan URL Web App adalah betul.");
-                    })
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.innerText = originalText;
-                    });
+                    .then(() => alert("Proses muat naik selesai! Sila semak Google Drive anda."))
+                    .catch(e => alert("Ralat sambungan ke Drive."));
                 }
-            } else {
-                btn.disabled = false;
-                btn.innerText = originalText;
             }
-        } catch (error) { 
-            alert("Ralat semasa menjana PDF."); 
-            btn.disabled = false;
-            btn.innerText = originalText;
-        }
+        } catch (error) { alert("Ralat semasa menjana PDF."); }
+        btn.disabled = false; btn.innerText = originalText;
     }
 
     window.onload = () => { loadSettings(); initQuestions(); sync(); };
